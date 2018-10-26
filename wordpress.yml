@@ -1,0 +1,58 @@
+--
+- name: Install wordpress
+  hosts: localhost
+  tasks:
+    - name: Download wordpress
+      get_url:
+        url: https://wordpress.org/latest.tar.gz
+        dest: /tmp/
+
+    - name: install webserver  Debian
+      when: ansible_os_family == "Debian"
+      package:
+        name: apache2
+
+    - name: install webserver  centos
+      when: ansible_os_family == "RedHat"
+      package:
+        name: httpd
+
+    - name: Install all packages
+      package:
+        name: "{{ item }}"
+      with_items:
+        - mysql
+        - mariadb-server
+        - php
+        - php-mysql
+        - php-pdo
+        - php-pear
+        - php-xml
+        - php-gd
+        - php-zlib
+
+    - name: Unzip wordpress
+      unarchive:
+        src: /tmp/wordpress-4.9.8.tar.gz
+        dest: /var/www/html/
+        remote_src: yes
+
+    - name: Start webserver
+      when: ansible_distribution_major_version == "6"
+      service:
+        name: httpd
+        state: restarted
+
+    - name: Start webserver
+      when: ansible_distribution_major_version == "7"
+      systemd:
+        name: httpd
+        state: restarted
+
+
+    - name: Start webserver
+      when: ansible_os_family == "Debian"
+      systemd:
+        name: apache2
+        state: restarted
+
